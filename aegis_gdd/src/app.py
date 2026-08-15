@@ -52,8 +52,9 @@ def load_data():
     cash_out = np.random.exponential(scale=2.0, size=n)
     size = np.random.choice([0, 1, 2], size=n, p=[0.5, 0.3, 0.2])
     
-    # Female discipline advantage + proxy bias simulation
-    repay_prob = 0.55 + (thrift * 0.04) - (cash_out * 0.02) + (0.05 if genders == 'F' else 0.0)
+    # Female discipline advantage + proxy bias simulation (FIXED NumPy vectorized evaluation)
+    gender_boost = np.where(genders == 'F', 0.05, 0.0)
+    repay_prob = 0.55 + (thrift * 0.04) - (cash_out * 0.02) + gender_boost
     repay = (np.random.rand(n) < np.clip(repay_prob, 0, 1)).astype(int)
     
     df = pd.DataFrame({
@@ -67,7 +68,6 @@ def load_data():
         'repayment_status': repay
     })
     return df
-
 df = load_data()
 
 # --- HEADER SECTION ---
