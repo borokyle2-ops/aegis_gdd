@@ -42,7 +42,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- DUMMY DATA GENERATOR ---
+# --- SYNTHETIC DATA GENERATOR ---
 @st.cache_data
 def load_data():
     np.random.seed(42)
@@ -52,7 +52,7 @@ def load_data():
     cash_out = np.random.exponential(scale=2.0, size=n)
     size = np.random.choice([0, 1, 2], size=n, p=[0.5, 0.3, 0.2])
     
-    # Female discipline advantage + proxy bias simulation (FIXED NumPy vectorized evaluation)
+    # Female discipline advantage + proxy bias simulation (Vectorized Evaluation)
     gender_boost = np.where(genders == 'F', 0.05, 0.0)
     repay_prob = 0.55 + (thrift * 0.04) - (cash_out * 0.02) + gender_boost
     repay = (np.random.rand(n) < np.clip(repay_prob, 0, 1)).astype(int)
@@ -63,11 +63,14 @@ def load_data():
         'business_size_idx': size,
         'daily_thrift_freq': thrift,
         'cash_out_freq': np.round(cash_out, 2),
+        'agent_float_balance': np.round(np.random.uniform(5000, 150000, n), 2),
+        'pos_terminal_uptime_hrs': np.random.randint(6, 18, n),
         'avg_txn_value': np.round(np.random.uniform(1000, 35000, n), 2),
         'account_age_months': np.random.randint(1, 36, n),
         'repayment_status': repay
     })
     return df
+
 df = load_data()
 
 # --- HEADER SECTION ---
@@ -75,7 +78,7 @@ st.markdown("""
     <div style="background-color: #1E222D; padding: 22px; border-radius: 10px; border: 1px solid #2D3748; margin-bottom: 20px;">
         <span style="background-color: #3182CE; color: white; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">AIR AI TRACK V1.0</span>
         <h1 style="color: white; margin-top: 8px; margin-bottom: 4px;">Aegis_GDD Infrastructure</h1>
-        <p style="color: #A0AEC0; font-size: 15px; margin: 0;">Converting Unobserved Transaction Behavior into Portable, Explainable Credit Signals</p>
+        <p style="color: #A0AEC0; font-size: 15px; margin: 0;">Converting Unobserved MFB Transaction Behavior into Portable, Explainable Credit Signals</p>
     </div>
 """, unsafe_allow_html=True)
 
@@ -112,8 +115,8 @@ with col4:
     st.markdown("""
         <div class="metric-card">
             <p style="color: #A0AEC0; font-size: 12px; margin:0;">NAMED SUPERVISORY ACTION</p>
-            <h2 style="color: #63B3ED; margin:4px 0; font-size: 20px;">15% RWA Relief</h2>
-            <p style="color: #A0AEC0; font-size: 12px; margin:0;">CBN GDD Incentive Schema</p>
+            <h2 style="color: #63B3ED; margin:4px 0; font-size: 18px;">MFB Provisioning Relief</h2>
+            <p style="color: #A0AEC0; font-size: 12px; margin:0;">CBN GDD Reserve Discount</p>
         </div>
     """, unsafe_allow_html=True)
 
@@ -162,7 +165,7 @@ with tab1:
                 Traditional credit underwriting penalizes female micro-merchants due to smaller business scale 
                 (<code>business_size_idx</code>) and higher cash-out velocity (<code>cash_out_freq</code>). 
                 Aegis_GDD isolates this proxy confounder, re-weighting scores based on daily deposit frequency 
-                (<code>daily_thrift_freq</code>) to reflect true repayment discipline.
+                (<code>daily_thrift_freq</code>) and agent float discipline (<code>agent_float_balance</code>) to reflect true repayment reliability.
             </p>
         </div>
     """, unsafe_allow_html=True)
@@ -170,32 +173,46 @@ with tab1:
 # --- TAB 2: FSP DATA MAPPING & STANDARDIZATION ENGINE ---
 with tab2:
     st.subheader("FSP Internal Fields → Regulatory GDD Schema Mapping")
-    st.write("Translating raw operational signals into standardized, regulator-ready GDD reporting formats.")
+    st.write("Translating raw operational signals from Microfinance Banks (MFBs) into standardized, regulator-ready GDD reporting formats.")
     
     mapping_data = pd.DataFrame([
         {
-            "AjoCard Field Name": "daily_thrift_freq",
+            "AjoCard Internal Field": "daily_thrift_freq",
             "Data Type": "Integer",
             "GDD Standard Field": "gdd_deposit_discipline_score",
             "CBN / AFI Standard Schema": "GDD-DEP-001 (Savings Continuity)",
             "Transformation Logic": "Log-scaled count of daily micro-deposits over 90 days"
         },
         {
-            "AjoCard Field Name": "cash_out_freq",
+            "AjoCard Internal Field": "cash_out_freq",
             "Data Type": "Float",
             "GDD Standard Field": "gdd_cash_flow_volatility",
             "CBN / AFI Standard Schema": "GDD-VOL-004 (Liquidity Velocity)",
             "Transformation Logic": "Normalized ratio of cash debits vs working capital"
         },
         {
-            "AjoCard Field Name": "business_size_idx",
+            "AjoCard Internal Field": "agent_float_balance",
+            "Data Type": "Float (Currency)",
+            "GDD Standard Field": "gdd_agent_liquidity_depth",
+            "CBN / AFI Standard Schema": "GDD-LIQ-003 (Agent Working Capital)",
+            "Transformation Logic": "Rolling 30-day average float maintenance level"
+        },
+        {
+            "AjoCard Internal Field": "pos_terminal_uptime_hrs",
+            "Data Type": "Integer",
+            "GDD Standard Field": "gdd_operational_continuity",
+            "CBN / AFI Standard Schema": "GDD-OPS-002 (Terminal Active Hours)",
+            "Transformation Logic": "Active daily terminal usage score"
+        },
+        {
+            "AjoCard Internal Field": "business_size_idx",
             "Data Type": "Categorical",
             "GDD Standard Field": "gdd_scale_category",
             "CBN / AFI Standard Schema": "GDD-MSME-002 (Enterprise Classification)",
             "Transformation Logic": "Mapped to Tier-1 / Micro-merchant scale matrix"
         },
         {
-            "AjoCard Field Name": "gender",
+            "AjoCard Internal Field": "gender",
             "Data Type": "String (Binary)",
             "GDD Standard Field": "gdd_gender_identifier",
             "CBN / AFI Standard Schema": "GDD-DEM-001 (Disaggregated Gender Tag)",
@@ -220,9 +237,21 @@ with tab3:
     st.write("Privacy-preserved macro insights for central bank compliance portals.")
     
     summary_table = pd.DataFrame({
-        'Metric': ['Sample Size', 'Repayment Rate (%)', 'Daily Thrift Freq (Avg)', 'Cash-Out Freq (Avg)'],
-        'Female (F)': [len(df[df['gender']=='F']), f"{f_repay:.1f}%", f"{df[df['gender']=='F']['daily_thrift_freq'].mean():.2f}", f"{df[df['gender']=='F']['cash_out_freq'].mean():.2f}"],
-        'Male (M)': [len(df[df['gender']=='M']), f"{m_repay:.1f}%", f"{df[df['gender']=='M']['daily_thrift_freq'].mean():.2f}", f"{df[df['gender']=='M']['cash_out_freq'].mean():.2f}"]
+        'Metric': ['Sample Size', 'Repayment Rate (%)', 'Daily Thrift Freq (Avg)', 'Cash-Out Freq (Avg)', 'Avg Agent Float (NGN)'],
+        'Female (F)': [
+            len(df[df['gender']=='F']), 
+            f"{f_repay:.1f}%", 
+            f"{df[df['gender']=='F']['daily_thrift_freq'].mean():.2f}", 
+            f"{df[df['gender']=='F']['cash_out_freq'].mean():.2f}",
+            f"₦{df[df['gender']=='F']['agent_float_balance'].mean():,.2f}"
+        ],
+        'Male (M)': [
+            len(df[df['gender']=='M']), 
+            f"{m_repay:.1f}%", 
+            f"{df[df['gender']=='M']['daily_thrift_freq'].mean():.2f}", 
+            f"{df[df['gender']=='M']['cash_out_freq'].mean():.2f}",
+            f"₦{df[df['gender']=='M']['agent_float_balance'].mean():,.2f}"
+        ]
     })
     
     st.table(summary_table)
@@ -239,23 +268,27 @@ with tab4:
     st.subheader("Regulatory & Underwriting Interpretation Guide")
     
     st.markdown("""
-        ### 1. Concrete Supervisory Action
-        **Central Bank Risk-Weight Relief:** Aegis_GDD validates micro-merchant creditworthiness by proving that high daily thrift 
-        frequency offsets low physical collateral. Regulators can grant a **15% Risk-Weighted Asset (RWA) reduction** to financial 
-        institutions adopting calibrated GDD scoring engines.
+        ### 1. Concrete Supervisory Action (MFB Framework)
+        **CBN Loan-Loss Provisioning Relief:** Aegis_GDD validates micro-merchant creditworthiness by proving that high daily thrift 
+        frequency and agent float discipline offset lack of traditional physical collateral. For Microfinance Banks (MFBs) operating under the flat 
+        10% Capital Adequacy Ratio (CAR), regulators can grant a **Capital Reserve & Loan-Loss Provisioning Discount** on micro-merchant loan books scored through calibrated GDD engines.
         
         ### 2. Sample Reason-Coded Risk Score
-        Below is how the engine translates Amina's raw transaction signals into an actionable credit decision:
+        Below is how the engine translates Amina's raw transaction signals into an actionable, audit-ready credit decision:
     """)
     
     st.markdown("""
         <div class="reason-box">
             <strong style="color:#38A169;">✓ REASON CODE 101 — High Deposit Continuity:</strong> 
-            Daily thrift frequency (>3.0) indicates strong cash-flow discipline, overriding business scale penalties.
+            Daily thrift frequency (>3.0) indicates exceptional cash-flow discipline, overriding business scale penalties.
+        </div>
+        <div class="reason-box">
+            <strong style="color:#38A169;">✓ REASON CODE 105 — Consistent Agent Float Maintenance:</strong> 
+            Average agent float balance (>₦50,000) demonstrates strong operational liquidity.
         </div>
         <div class="reason-box">
             <strong style="color:#38A169;">✓ REASON CODE 204 — Verified Identity:</strong> 
-            National Identity Number (NIN) tied to active AjoCard account.
+            National Identity Number (NIN) verified on-premise within AjoCard core environment.
         </div>
         <div class="reason-box">
             <strong style="color:#3182CE;">ℹ️ REASON CODE 302 — Proxy Scale Neutralized:</strong> 
@@ -265,8 +298,8 @@ with tab4:
     
     st.markdown("""
         ### 3. Data Privacy Architecture (NDPA 2023)
-        * **Zero PII Exposure:** Raw personal data remains entirely within the FSP core infrastructure.
-        * **Macro-Only Signal:** Only aggregate, anonymized GDD schema returns are accessible to external supervisory portals.
+        * **Zero PII Exposure:** Raw personal identifiable data remains 100% within the FSP core infrastructure.
+        * **Macro-Only Supervisory Signal:** Only aggregate, anonymized GDD schema returns are exposed outward to central bank compliance portals.
     """)
 
 # --- SIDEBAR CONTROLS ---
