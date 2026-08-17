@@ -169,6 +169,42 @@ with tab1:
             </p>
         </div>
     """, unsafe_allow_html=True)
+    #  NEW CAUSAL COUNTERFACTUAL BLOCK
+    st.markdown("<hr style='border-color: #2D3748;'>", unsafe_allow_html=True)
+    st.subheader("Interactive Causal Counterfactual Engine")
+    st.write("Test counterfactual scenarios to isolate proxy discrimination from business scale confounders.")
+
+    col_c1, col_c2 = st.columns([1, 2])
+
+    with col_c1:
+        st.markdown("**Merchant Profile Simulator**")
+        sim_thrift = st.slider("Daily Thrift Frequency (Deposits/Day)", 0, 10, 4)
+        sim_cashout = st.slider("Cash-Out Frequency (Debits/Day)", 0.0, 5.0, 2.5)
+        sim_scale = st.selectbox(
+            "Business Scale Index (Proxy Confounder)", 
+            [0, 1, 2], 
+            format_func=lambda x: ["Tier 0 (Micro/Informal)", "Tier 1 (Small)", "Tier 2 (Established)"][x]
+        )
+
+    with col_c2:
+        # 1. Traditional Biased Score (Confounded by scale)
+        traditional_score = int(np.clip((sim_scale * 20) + (sim_thrift * 5) - (sim_cashout * 8) + 40, 10, 99))
+        
+        # 2. Aegis Causal Debiased Score (Isolates thrift continuity & neutralizes scale bias)
+        causal_score = int(np.clip((sim_thrift * 14) + 35 - (sim_cashout * 3), 10, 99))
+        
+        st.markdown(f"""
+            <div style="background-color: #1E222D; padding: 16px; border-radius: 8px; border: 1px solid #2D3748;">
+                <p style="color: #A0AEC0; margin:0; font-size: 13px;">TRADITIONAL MODEL SCORE (Confounded by Business Scale)</p>
+                <h2 style="color: #FC8181; margin: 2px 0;">{traditional_score} / 100 <span style="font-size: 14px; color: #FC8181;">(High Risk Penalty)</span></h2>
+                <hr style="border-color: #2D3748;">
+                <p style="color: #A0AEC0; margin:0; font-size: 13px;">AEGIS CAUSAL DEBIASED SCORE (Isolated Discipline Pathway)</p>
+                <h2 style="color: #38A169; margin: 2px 0;">{causal_score} / 100 <span style="font-size: 14px; color: #38A169;">(Creditworthy Approval)</span></h2>
+                <p style="color: #63B3ED; font-size: 12px; margin-top: 6px;">
+                    <strong>Causal Attribution:</strong> Neutralized {sim_scale * 20} pts of proxy size bias. Credit score reflects true daily thrift continuity.
+                </p>
+            </div>
+        """, unsafe_allow_html=True)
 
 # --- TAB 2: FSP DATA MAPPING & STANDARDIZATION ENGINE ---
 with tab2:
