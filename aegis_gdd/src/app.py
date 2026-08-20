@@ -1,7 +1,13 @@
-from debiased_pipeline import AjoCausalCreditPipeline
+import sys
+from pathlib import Path
+
+# Add 'src' directory to Python system path dynamically
+sys.path.append(str(Path(__file__).parent))
+
 import numpy as np
 import pandas as pd
 import streamlit as st
+from debiased_pipeline import AjoCausalCreditPipeline
 
 # --- PAGE CONFIGURATION ---
 st.set_page_config(
