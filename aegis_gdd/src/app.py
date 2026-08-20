@@ -534,7 +534,7 @@ with tab4:
         </div>
         <div class="reason-box">
             <strong style="color:#38A169;">✓ REASON CODE 105 — Consistent Agent Float Maintenance:</strong> 
-            Average agent float balance (>₦50,000) demonstrates strong operational liquidity.
+            Average agent float balance (>₦250,000) demonstrates strong operational liquidity.
         </div>
         <div class="reason-box">
             <strong style="color:#38A169;">✓ REASON CODE 204 — Verified Identity:</strong> 

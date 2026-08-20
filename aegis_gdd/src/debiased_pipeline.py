@@ -50,12 +50,17 @@ class AjoCausalCreditPipeline:
         self.retained_alt_cols = []
         self.scrubbed_cols = []
 
-    def preprocess_and_fit(self, df: pd.DataFrame, corr_threshold: float = 0.80):
+    def preprocess_and_fit(
+        self, df: pd.DataFrame, corr_threshold: float = 0.80
+    ):
         """Step 1: Feature Scrubbing (De-Confounding) & Causal Model Training"""
         df_encoded = df.copy()
 
         # Encode categorical gender strings ('F'/'M') to numeric indicators (1/0)
-        if df_encoded[self.protected_col].dtype == "object":
+        if (
+            df_encoded[self.protected_col].dtype == "object"
+            or isinstance(df_encoded[self.protected_col].iloc[0], str)
+        ):
             df_encoded["gender_num"] = (
                 df_encoded[self.protected_col] == "F"
             ).astype(int)
@@ -67,8 +72,12 @@ class AjoCausalCreditPipeline:
         self.retained_alt_cols = []
         self.scrubbed_cols = []
         for col in self.alt_cols:
-            corr = abs(df_encoded[enc_target_col].corr(df_encoded[col]))
-            if corr < corr_threshold:
+            # Force both series to numeric to prevent string-to-float coercion errors
+            s_target = pd.to_numeric(df_encoded[enc_target_col], errors="coerce")
+            s_feature = pd.to_numeric(df_encoded[col], errors="coerce")
+
+            corr = abs(s_target.corr(s_feature))
+            if pd.isna(corr) or corr < corr_threshold:
                 self.retained_alt_cols.append(col)
             else:
                 self.scrubbed_cols.append(col)
