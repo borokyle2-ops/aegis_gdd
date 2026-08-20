@@ -110,7 +110,7 @@ class AjoCausalCreditPipeline:
         return self.model.predict_proba(X_input)[:, 1]
 
     def predict_debiased_risk(
-        self, X_input: pd.DataFrame, target_ref_num: int = 1
+        self, X_input: pd.DataFrame
     ) -> np.ndarray:
         """Step 2: Neutral Prediction (Apply counterfactual do-operator A = a')"""
         X_counterfactual = X_input.copy()
@@ -119,7 +119,7 @@ class AjoCausalCreditPipeline:
             if "gender_num" in X_counterfactual.columns
             else self.protected_col
         )
-        X_counterfactual[target_col_name] = target_ref_num
+        X_counterfactual[target_col_name] = self.ref_val
         return self.model.predict_proba(X_counterfactual)[:, 1]
 
     def evaluate_metrics(
